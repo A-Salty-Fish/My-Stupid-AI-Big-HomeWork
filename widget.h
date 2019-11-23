@@ -30,6 +30,8 @@ private slots:
 
     void on_GenMinButton_2_clicked();
 
+    void on_ContinueButton_2_clicked();
+
 private:
     Ui::Widget *ui;
 };
