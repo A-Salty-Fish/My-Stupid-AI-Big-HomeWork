@@ -4,7 +4,7 @@
 #include "ants.h"
 #include "gene.h"
 #include"qtimer.h"
-#include"windows.h"
+
 
 static MyMaze m;
 static int maze[(MAXLENGTH)*MAXLENGTH];
@@ -12,18 +12,23 @@ static bool Genetated=0;
 static int BOXWIDTH=40;//一格的宽度 正方形
 static int DRAWWIDTH=MAXLENGTH*BOXWIDTH;//画布长度
 
+static bool ShowDPWay=false;
+
 const int ANTSNUM=5;
 static Ant ants[ANTSNUM];
-static int min;
+static int MinOfAnt=MAXLENGTH*MAXNUMBER;
 static int PheRed=125/ANTSNUM;
 static bool ShowAntWay=0;
-static QTimer *timer=nullptr;
+static QTimer *AntTimer=nullptr;
 static bool isAnt;
 
 static Gene group[GeneNum];
 static bool FirstTurn=true;
-static QColor GeneColor[MAXLENGTH][MAXLENGTH];
+static int GeneColor[MAXLENGTH*MAXLENGTH];
+static int MinOfGene=MAXLENGTH*MAXNUMBER;
+static Gene BestGene;
 static bool ShowGeneWay=0;
+static QTimer *GeneTimer=nullptr;
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
@@ -37,11 +42,11 @@ Widget::Widget(QWidget *parent)
     ui->ContinueButton_2->setEnabled(false);
     ui->AutoButton_2->setEnabled(false);
     ui->GenMinButton_2->setEnabled(false);
-
+    ui->DPButton->setEnabled(false);
     setPalette(QPalette(Qt::white));
     setAutoFillBackground(true);
 }
-void Widget::paintEvent(QPaintEvent *event){//绘图函数
+void Widget::paintEvent(QPaintEvent *event){    //绘图函数
     QPainter painter(this  );
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setRenderHint(QPainter::TextAntialiasing);
@@ -79,7 +84,7 @@ void Widget::paintEvent(QPaintEvent *event){//绘图函数
                         }
                     }
                     if (ShowGeneWay==0&&!isAnt){
-                        painter.fillRect(ThisRect,GeneColor[i][j]);
+                        painter.fillRect(ThisRect,QColor(5,0,GeneColor[i*MAXLENGTH+j]>255?255:GeneColor[i*MAXLENGTH+j]));
                     }
                     painter.drawText(j*BOXWIDTH+BOXWIDTH/3,i*BOXWIDTH+BOXWIDTH/2,str);
                 }
@@ -98,6 +103,29 @@ void Widget::paintEvent(QPaintEvent *event){//绘图函数
                 min_x.push(tmpx.pop());min_y.push(tmpy.pop());
             }
         }
+        if (ShowGeneWay==1){
+            int x=1,y=1;
+            for (int i=0;i<GeneLength-1;i++){
+                if (BestGene.GetBit(i)==1)x++;
+                else y++;
+                QRect ThisRect(y*BOXWIDTH,x*BOXWIDTH,BOXWIDTH,BOXWIDTH);
+                painter.fillRect(ThisRect,Qt::white);
+                QString str=QString::number(maze[x*MAXLENGTH+y],10);
+                painter.drawText(y*BOXWIDTH+BOXWIDTH/3,x*BOXWIDTH+BOXWIDTH/2,str);
+            }
+        }
+        if (ShowDPWay==1){
+            for (int i=1;i<MAXLENGTH-1;i++){
+                for (int j=1;j<MAXLENGTH-1;j++){
+                    if (DPPath[i][j]==1){
+                        QRect ThisRect(j*BOXWIDTH,i*BOXWIDTH,BOXWIDTH,BOXWIDTH);
+                        painter.fillRect(ThisRect,Qt::yellow);
+                        QString str=QString::number(maze[i*MAXLENGTH+j],10);
+                        painter.drawText(j*BOXWIDTH+BOXWIDTH/3,i*BOXWIDTH+BOXWIDTH/2,str);
+                    }
+                }
+            }
+        }
     }
 }
 Widget::~Widget()
@@ -108,7 +136,7 @@ Widget::~Widget()
 void Widget::on_PushButton_clicked()
 {
     if (Genetated==0){
-        min=MAXNUMBER*MAXLENGTH;
+        MinOfAnt=MAXNUMBER*MAXLENGTH;
         isAnt=true;
         m=MyMaze();
         m.CreateMazeWithWeights();
@@ -119,6 +147,7 @@ void Widget::on_PushButton_clicked()
                 Pheromone[i][j]=MinPhe;
             }
         for (int i=0;i<ANTSNUM;i++) ants[i]= Ant();
+        for (int i=0;i<MAXLENGTH;i++) for (int j=0;j<MAXLENGTH;j++) GeneColor[i*MAXLENGTH+j]=0;
         Genetated=1;
         update();
         QString dpstr=QString::number(m.DP(),10);
@@ -129,21 +158,30 @@ void Widget::on_PushButton_clicked()
         ui->ContinueButton->setEnabled(true);
         ui->ContinueButton_2->setEnabled(true);
         ui->AutoButton_2->setEnabled(true);
-        ui->GenMinButton_2->setEnabled(true);
+        ui->DPButton->setEnabled(true);
     }
 }
 
 void Widget::on_ResetButton_clicked()
 {
-    if (timer!=nullptr) timer->stop();
+    if (AntTimer!=nullptr) AntTimer->stop();
+    if (GeneTimer!=nullptr) GeneTimer->stop();
     if (Genetated==1){
         Genetated=0;
+        ShowAntWay=0;
+        ShowDPWay=0;
+        ShowGeneWay=0;
+        isAnt=true;
+        FirstTurn=true;
         for (int i=0;i<MAXLENGTH;i++)
             for (int j=0;j<MAXLENGTH;j++)
                 maze[i*MAXLENGTH+j]=ROUTE;
-        min=MAXLENGTH*MAXNUMBER;
+        MinOfAnt=MAXLENGTH*MAXNUMBER;
+        MinOfGene=MAXLENGTH*MAXNUMBER;
         ui->AntText->clear();
         update();
+        ui->GenText->clear();
+        ui->GeneMinText->clear();
         ui->PushButton->setEnabled(true);
         ui->AutoButton->setEnabled(false);
         ui->AntMinButton->setEnabled(false);
@@ -169,7 +207,7 @@ void Widget::on_ContinueButton_clicked()
     int mini=0;
     bool is_smaller=false;
     for (int i=0;i<ANTSNUM;i++){//找到最短的那只
-        if (ants[i].Length()<min){ min=ants[i].Length();mini=i;is_smaller=true;}
+        if (ants[i].Length()<MinOfAnt){ MinOfAnt=ants[i].Length();mini=i;is_smaller=true;}
     }
     if(is_smaller) ants[mini].UpdateMinStack();//更新保存最短路径的栈
     for (int i=0;i<ANTSNUM;i++){
@@ -177,23 +215,23 @@ void Widget::on_ContinueButton_clicked()
     }
     Ant::UpdatePheromone(maze);
     update();
-    QString str=QString::number(min,10);
+    QString str=QString::number(MinOfAnt,10);
     ui->AntText->setText(str);
 }
 
 void Widget::on_AutoButton_clicked()
 {
     ShowAntWay=0;
-    timer = new QTimer(this);
-    connect(timer, SIGNAL(timeout()), this, SLOT(on_ContinueButton_clicked()));
-    timer->start(300);
+    AntTimer = new QTimer(this);
+    connect(AntTimer, SIGNAL(timeout()), this, SLOT(on_ContinueButton_clicked()));
+    AntTimer->start(300);
 }
 
 void Widget::on_AntMinButton_clicked()
 {
     ui->AntMinButton->setEnabled(false);
-    if (timer!=nullptr)
-        timer->stop();
+    if (AntTimer!=nullptr)
+        AntTimer->stop();
     ShowAntWay=1;
     update();
 
@@ -201,35 +239,73 @@ void Widget::on_AntMinButton_clicked()
 
 void Widget::on_ContinueButton_2_clicked()
 {
+    ShowGeneWay=0;
+    ui->AutoButton->setEnabled(false);
+    ui->AntMinButton->setEnabled(false);
+    ui->ContinueButton->setEnabled(false);
+    ui->GenMinButton_2->setEnabled(true);
+    char CharGen[GeneLength+2];
     isAnt=false;
     if (FirstTurn) {
-        for (int i=0;i<GeneNum;i++){
+        int i;
+        int min=INF;
+        int mini=0;
+        for (i=0;i<GeneNum;i++){
             group[i]=Gene();
+            qsrand((uint)QTime::currentTime().msec());
+            Sleep(qrand()%10);
             group[i].Initial();
+            group[i].Variation(2);
+            int l=group[i].Length(maze);
+            if (l<min){
+                min=l;
+                mini=i;
+            }
         }
+        MinOfGene=min;
+        BestGene=group[mini];
+        ui->GeneMinText->setText(QString::number(min,10));
+        group[mini].GeneToChar(CharGen);
+        ui->GenText->setText(QString(CharGen));
         FirstTurn=false;
+        Gene::UpdateQColor(group,GeneColor);
     }
     else{
         Gene::NewTurn(group,maze);
+        if (group[0].ReturnLength()<BestGene.ReturnLength()){
+            BestGene=group[0];
+        }
+        ui->GeneMinText->setText(QString::number(BestGene.ReturnLength(),10));
+        BestGene.GeneToChar(CharGen);
+         ui->GenText->setText(QString(CharGen));
+        Gene::UpdateQColor(group,GeneColor);
     }
+
     update();
+}
+
+
+void Widget::on_AutoButton_2_clicked()
+{
+    ShowGeneWay=0;
+    GeneTimer = new QTimer(this);
+    connect(GeneTimer, SIGNAL(timeout()), this, SLOT(on_ContinueButton_2_clicked()));
+    GeneTimer->start(300);
 }
 
 void Widget::on_GenMinButton_2_clicked()
 {
-    ui->GenText->clear();
-    Gene g;
-    char c[34];
-    g.Initial();
-    g.GeneToChar(c);
-    QString str = QString(c);
-    //    QString str =QString::number(g.onenum(),10);
-    ui->GenText->setText(str);
-    g.Variation(1);
-    g.GeneToChar(c);
-//    QString str2=QString::number(g.Length(maze));
-    str=QString(c);
-    ui->AntText->setText(str);
+    ui->GenMinButton_2->setEnabled(false);
+    if (GeneTimer!=nullptr)
+        GeneTimer->stop();
+    ShowGeneWay=1;
+    update();
 }
 
 
+void Widget::on_DPButton_clicked()
+{
+    ShowDPWay=true;
+    ui->DPButton->setEnabled(false);
+    update();
+}

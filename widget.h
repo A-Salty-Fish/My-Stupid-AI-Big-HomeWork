@@ -32,6 +32,10 @@ private slots:
 
     void on_ContinueButton_2_clicked();
 
+    void on_AutoButton_2_clicked();
+
+    void on_DPButton_clicked();
+
 private:
     Ui::Widget *ui;
 };

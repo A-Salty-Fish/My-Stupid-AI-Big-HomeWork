@@ -135,7 +135,7 @@
     <number>80</number>
    </property>
   </widget>
-  <widget class="QTextEdit" name="GeneticText">
+  <widget class="QTextEdit" name="GeneMinText">
    <property name="geometry">
     <rect>
      <x>850</x>
@@ -210,7 +210,7 @@
   <widget class="QLabel" name="label_6">
    <property name="geometry">
     <rect>
-     <x>870</x>
+     <x>860</x>
      <y>80</y>
      <width>72</width>
      <height>15</height>
@@ -223,7 +223,7 @@
   <widget class="QLabel" name="DPLable">
    <property name="geometry">
     <rect>
-     <x>930</x>
+     <x>920</x>
      <y>80</y>
      <width>72</width>
      <height>15</height>
@@ -231,6 +231,19 @@
    </property>
    <property name="text">
     <string/>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="DPButton">
+   <property name="geometry">
+    <rect>
+     <x>970</x>
+     <y>80</y>
+     <width>41</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>路径</string>
    </property>
   </widget>
  </widget>

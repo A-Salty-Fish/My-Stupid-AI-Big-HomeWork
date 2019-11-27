@@ -2,12 +2,14 @@
 #define MAZE_H
 #include<QTime>
 #include<qqueue.h>
+#include"windows.h"
 const int MAXLENGTH = 19;
 static const int MAXNUMBER=10;
 static const int ROUTE=0;
 static const int WALL=11;
 static const int LEFT=-1,RIGHT=-2,UP=-3,DOWN=-4;
-const int INF=0xFFFFFF;
+const int INF=0xFFFFF;
+static bool DPPath[MAXLENGTH][MAXLENGTH];
 
 class MyMaze{
 private:
@@ -15,8 +17,10 @@ private:
 public:
     MyMaze(){
         for (int i=0;i<MAXLENGTH;i++)
-            for(int j=0;j<MAXLENGTH;j++)
+            for(int j=0;j<MAXLENGTH;j++){
+                DPPath[i][j]=0;
                 maze[i][j]=ROUTE;
+            }
     }
     void MazeToAry(int* s) {
         for (int i=0;i<MAXLENGTH;i++)
@@ -50,11 +54,27 @@ public:
             }
         }
         for (int i=2*MAXLENGTH-5;i>1;i--){
-            for (int j=1;j<MAXLENGTH-1;j++)
-                if (TriangleMaze[i][j]!=INF)
-                    TriangleMaze[i][j]+=TriangleMaze[i+1][j]>TriangleMaze[i+1][j+1]?TriangleMaze[i+1][j+1]:TriangleMaze[i+1][j];
+            for (int j=1;j<i;j++)
+                if (TriangleMaze[i][j]!=INF){//&&(TriangleMaze[i+1][j]!=INF||TriangleMaze[i+1][j+1]!=INF)
+                    if (TriangleMaze[i+1][j]>TriangleMaze[i+1][j+1])
+                        TriangleMaze[i][j]+=TriangleMaze[i+1][j+1];
+                    else TriangleMaze[i][j]+=TriangleMaze[i+1][j];
+                }
         }
-        return TriangleMaze[2][1];
+        int j=1;
+        for (int i=2;i<2*MAXLENGTH-3;i++){
+            DPPath[i-j][j]=1;
+            if (TriangleMaze[i+1][j]>TriangleMaze[i+1][j+1]) j++;
+        }
+        DPPath[1][1]=0;
+        DPPath[MAXLENGTH-2][MAXLENGTH-2]=0;
+        int sum=0;
+        for(int i=1;i<MAXLENGTH-1;i++)
+            for (int j=1;j<MAXLENGTH-1;j++)
+                if (DPPath[i][j])
+                    sum+=maze[i][j];
+//        return sum;
+                return TriangleMaze[2][1];
     }
 };
 #endif // MAZE_H

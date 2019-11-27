@@ -7,7 +7,7 @@
 
 const double alpha=0.8;//挥发常数
 static const double MinPhe=1.0000005;
-const double PheRate=0.002;
+const double PheRate=0.001;
 static double Pheromone[MAXLENGTH][MAXLENGTH];
 static QStack<int> min_x,min_y;
 const int MAXWAY=(2*MAXLENGTH-4)*MAXNUMBER;
