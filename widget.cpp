@@ -13,14 +13,10 @@ static int BOXWIDTH=40;//一格的宽度 正方形
 static int DRAWWIDTH=MAXLENGTH*BOXWIDTH;//画布长度
 
 static bool ShowDPWay=false;
-
-const int ANTSNUM=5;
 static Ant ants[ANTSNUM];
-static int MinOfAnt=MAXLENGTH*MAXNUMBER;
-static int PheRed=125/ANTSNUM;
-static bool ShowAntWay=0;
 static QTimer *AntTimer=nullptr;
 static bool isAnt;
+static bool ShowAntWay=0;
 
 static Gene group[GeneNum];
 static bool FirstTurn=true;
@@ -70,7 +66,7 @@ void Widget::paintEvent(QPaintEvent *event){    //绘图函数
                 switch (maze[i*MAXLENGTH+j]) {
                 case WALL:
                     brush.setColor(Qt::blue);    painter.setBrush(brush);
-                    painter.fillRect(ThisRect,Qt::blue);break;
+                    painter.fillRect(ThisRect,Qt::green);break;
                 default:
                     painter.fillRect(ThisRect,QColor(5,0,0,255));
                     QString str=QString::number(maze[i*MAXLENGTH+j],10);
@@ -174,11 +170,17 @@ void Widget::on_ResetButton_clicked()
         isAnt=true;
         FirstTurn=true;
         for (int i=0;i<MAXLENGTH;i++)
-            for (int j=0;j<MAXLENGTH;j++)
+            for (int j=0;j<MAXLENGTH;j++){
                 maze[i*MAXLENGTH+j]=ROUTE;
+                DPPath[i][j]=0;
+                Pheromone[i][j]=MinPhe;
+            }
+        FirstTurn=true;
         MinOfAnt=MAXLENGTH*MAXNUMBER;
         MinOfGene=MAXLENGTH*MAXNUMBER;
         ui->AntText->clear();
+        ui->DPLable->setText("\0");
+        ui->DPButton->setText("路径\\开");
         update();
         ui->GenText->clear();
         ui->GeneMinText->clear();
@@ -197,23 +199,7 @@ void Widget::on_ContinueButton_clicked()
     ui->ContinueButton_2->setEnabled(false);
     ui->AutoButton_2->setEnabled(false);
     ui->GenMinButton_2->setEnabled(false);
-    for (int i=0;i<ANTSNUM;i++) ants[i]= Ant();
-    for (int n=0;n<2*MAXLENGTH-4;n++)
-        for (int i=0;i<ANTSNUM;i++){
-            qsrand((uint)QTime::currentTime().msec());
-            Sleep(qrand()%20);
-            ants[i].FindWay(maze);
-        }
-    int mini=0;
-    bool is_smaller=false;
-    for (int i=0;i<ANTSNUM;i++){//找到最短的那只
-        if (ants[i].Length()<MinOfAnt){ MinOfAnt=ants[i].Length();mini=i;is_smaller=true;}
-    }
-    if(is_smaller) ants[mini].UpdateMinStack();//更新保存最短路径的栈
-    for (int i=0;i<ANTSNUM;i++){
-        ants[i].RemainPheromone(maze);
-    }
-    Ant::UpdatePheromone(maze);
+    Ant::NewTurn(ants,maze);
     update();
     QString str=QString::number(MinOfAnt,10);
     ui->AntText->setText(str);
@@ -277,7 +263,7 @@ void Widget::on_ContinueButton_2_clicked()
         }
         ui->GeneMinText->setText(QString::number(BestGene.ReturnLength(),10));
         BestGene.GeneToChar(CharGen);
-         ui->GenText->setText(QString(CharGen));
+        ui->GenText->setText(QString(CharGen));
         Gene::UpdateQColor(group,GeneColor);
     }
 
@@ -305,7 +291,13 @@ void Widget::on_GenMinButton_2_clicked()
 
 void Widget::on_DPButton_clicked()
 {
-    ShowDPWay=true;
-    ui->DPButton->setEnabled(false);
+    if (!ShowDPWay){
+        ShowDPWay=true;
+        ui->DPButton->setText("路径\\关");
+    }
+    else {
+        ShowDPWay=false;
+        ui->DPButton->setText("路径\\开");
+    }
     update();
 }

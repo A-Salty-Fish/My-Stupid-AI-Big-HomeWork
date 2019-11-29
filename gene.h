@@ -4,7 +4,7 @@
 const int GeneLength=32;//基因长度
 static const int GeneNum=64;//个体数量
 const int VarRate=0.01;//变异概率
-const int GeneBlue=320/GeneNum;
+const int GeneBlue=300/GeneNum;//用来绘图的常数 蓝色越深 代表个体越多
 
 class Gene{
 private:
