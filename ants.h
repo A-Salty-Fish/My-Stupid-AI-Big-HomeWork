@@ -1,26 +1,27 @@
 #ifndef ANTS_H
 #define ANTS_H
 
-#endif // ANTS_H
 #include"maze.h"
-#include"qstack.h"
+#include<QStack>
+#include<QThread>
 
-const double alpha=0.7;//挥发常数
+const double alpha=0.8;//挥发常数
 static const double MinPhe=1.0000005;//每格最小的信息素浓度
 static double Pheromone[MAXLENGTH][MAXLENGTH];//保存信息素的数组
 static QStack<int> min_x,min_y;//保存最优解
 const int MAXWAY=(2*MAXLENGTH-4)*MAXNUMBER;//可能的最长距离
 
-static const int ANTSNUM=10;//一组蚂蚁的数量
+static const int ANTSNUM=5;//一组蚂蚁的数量
 const double PheRate=(double)4/ANTSNUM;//每只蚂蚁每次留下信息素浓度的比例常数
 static int MinOfAnt=MAXLENGTH*MAXNUMBER;//存储最优解的值
-static int PheRed=60/ANTSNUM;//用来绘图的颜色常数 越红代表信息素浓度越高
+static int PheRed=100/ANTSNUM;//用来绘图的颜色常数 越红代表信息素浓度越高
 
 
 int SelectDirection(double right,double down){//轮盘赌法 以右方的信息素浓度与下方信息素浓度的比值随机选择一个方向
     const int total=500;
     int rightp=(int)((double)total*right/(right+down));
     qsrand((uint)QTime::currentTime().msec());
+    Sleep(qrand()%5);
     int randnum=qrand()%total;
     if (randnum<rightp) return RIGHT;
     else return DOWN;
@@ -53,10 +54,10 @@ public:
                 Pheromone[i][j]=alpha*(Pheromone[i][j]-MinPhe)+1;
             }
     }
-    void RemainPheromone(){//在走过的路径上留下信息素
+    void RemainPheromone(){//在走过的路径上留下信息素  使用Ant-Circle System
         while(!back_x.empty()&&!back_y.empty()){
             int px=back_x.pop();int py=back_y.pop();
-            Pheromone[px][py]+=PheRate*MAXWAY/length;//距离越短 信息素浓度越大
+            Pheromone[px][py]+=(double)MAXWAY/ANTSNUM/length;//距离越短 信息素浓度越大
         }
     }
     void FindWay(int * maze){//每只蚂蚁每一步的寻路
@@ -100,3 +101,5 @@ public:
     }
 
 };
+
+#endif // ANTS_H

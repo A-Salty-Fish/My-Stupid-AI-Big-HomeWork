@@ -187,6 +187,7 @@ void Widget::on_ResetButton_clicked()
         ui->PushButton->setEnabled(true);
         ui->AutoButton->setEnabled(false);
         ui->AntMinButton->setEnabled(false);
+        ui->GenMinButton_2->setEnabled(false);
         ui->ContinueButton->setEnabled(false);
     }
 }
@@ -210,7 +211,7 @@ void Widget::on_AutoButton_clicked()
     ShowAntWay=0;
     AntTimer = new QTimer(this);
     connect(AntTimer, SIGNAL(timeout()), this, SLOT(on_ContinueButton_clicked()));
-    AntTimer->start(300);
+    AntTimer->start(100);
 }
 
 void Widget::on_AntMinButton_clicked()
@@ -225,7 +226,8 @@ void Widget::on_AntMinButton_clicked()
 
 void Widget::on_ContinueButton_2_clicked()
 {
-    ShowGeneWay=0;
+    if (ShowGeneWay==1)
+        ShowGeneWay=0;
     ui->AutoButton->setEnabled(false);
     ui->AntMinButton->setEnabled(false);
     ui->ContinueButton->setEnabled(false);
@@ -276,7 +278,7 @@ void Widget::on_AutoButton_2_clicked()
     ShowGeneWay=0;
     GeneTimer = new QTimer(this);
     connect(GeneTimer, SIGNAL(timeout()), this, SLOT(on_ContinueButton_2_clicked()));
-    GeneTimer->start(300);
+    GeneTimer->start(100);
 }
 
 void Widget::on_GenMinButton_2_clicked()
@@ -294,6 +296,35 @@ void Widget::on_DPButton_clicked()
     if (!ShowDPWay){
         ShowDPWay=true;
         ui->DPButton->setText("路径\\关");
+        if (isAnt){
+            for (int i=0;i<MAXLENGTH;i++){
+                for (int j=0;j<MAXLENGTH;j++)
+                    if (DPPath[i][j])
+                        Pheromone[i][j]+=5*MinPhe;
+                    else {}
+            }
+            Ant::UpdatePheromone();
+            Ant::NewTurn(ants,maze);
+        }
+        else{
+            int i=1,j=1,k=0;
+            while(i!=MAXLENGTH-2&&j!=MAXLENGTH-2){
+                if (DPPath[i+1][j]==1) {
+                    i++;
+                    for (int n=0;n<GeneNum/2;n++) {
+                        group[GeneNum-n].SetBit(k,1);
+                    }
+                }
+                else {
+                    j++;
+                    for (int n=0;n<GeneNum/2;n++) {
+                        group[GeneNum-n].SetBit(k,0);
+                    }
+                }
+                k++;
+            }
+            Gene::NewTurn(group,maze);
+        }
     }
     else {
         ShowDPWay=false;
