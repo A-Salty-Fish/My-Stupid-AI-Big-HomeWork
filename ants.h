@@ -11,7 +11,7 @@ static double Pheromone[MAXLENGTH][MAXLENGTH];//保存信息素的数组
 static QStack<int> min_x,min_y;//保存最优解
 const int MAXWAY=(2*MAXLENGTH-4)*MAXNUMBER;//可能的最长距离
 
-static const int ANTSNUM=5;//一组蚂蚁的数量
+static const int ANTSNUM=3;//一组蚂蚁的数量
 const double PheRate=(double)4/ANTSNUM;//每只蚂蚁每次留下信息素浓度的比例常数
 static int MinOfAnt=MAXLENGTH*MAXNUMBER;//存储最优解的值
 static int PheRed=100/ANTSNUM;//用来绘图的颜色常数 越红代表信息素浓度越高

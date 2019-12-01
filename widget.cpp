@@ -18,7 +18,7 @@ static QTimer *AntTimer=nullptr;
 static bool isAnt;
 static bool ShowAntWay=0;
 
-static Gene group[GeneNum];
+static Gene* group;
 static bool FirstTurn=true;
 static int GeneColor[MAXLENGTH*MAXLENGTH];
 static int MinOfGene=MAXLENGTH*MAXNUMBER;
@@ -132,6 +132,7 @@ Widget::~Widget()
 void Widget::on_PushButton_clicked()
 {
     if (Genetated==0){
+        group=new Gene[GeneNum];
         MinOfAnt=MAXNUMBER*MAXLENGTH;
         isAnt=true;
         m=MyMaze();
@@ -226,8 +227,7 @@ void Widget::on_AntMinButton_clicked()
 
 void Widget::on_ContinueButton_2_clicked()
 {
-    if (ShowGeneWay==1)
-        ShowGeneWay=0;
+    ShowGeneWay=0;
     ui->AutoButton->setEnabled(false);
     ui->AntMinButton->setEnabled(false);
     ui->ContinueButton->setEnabled(false);
@@ -241,9 +241,9 @@ void Widget::on_ContinueButton_2_clicked()
         for (i=0;i<GeneNum;i++){
             group[i]=Gene();
             qsrand((uint)QTime::currentTime().msec());
-            Sleep(qrand()%10);
             group[i].Initial();
-            group[i].Variation(2);
+            Sleep(qrand()%3+1);
+            group[i].Variation(qrand()%2+1);
             int l=group[i].Length(maze);
             if (l<min){
                 min=l;
@@ -260,15 +260,21 @@ void Widget::on_ContinueButton_2_clicked()
     }
     else{
         Gene::NewTurn(group,maze);
-        if (group[0].ReturnLength()<BestGene.ReturnLength()){
-            BestGene=group[0];
+        int mini=-1;
+        int min=BestGene.ReturnLength();
+        for (int i=0;i<GeneNum;i++){
+            if (group[i].ReturnLength()<min){
+                mini=i;
+                min=group[i].ReturnLength();
+            }
         }
+        if (mini!=-1)
+            BestGene=group[mini];
         ui->GeneMinText->setText(QString::number(BestGene.ReturnLength(),10));
         BestGene.GeneToChar(CharGen);
         ui->GenText->setText(QString(CharGen));
         Gene::UpdateQColor(group,GeneColor);
     }
-
     update();
 }
 
@@ -290,7 +296,6 @@ void Widget::on_GenMinButton_2_clicked()
     update();
 }
 
-
 void Widget::on_DPButton_clicked()
 {
     if (!ShowDPWay){
@@ -300,15 +305,13 @@ void Widget::on_DPButton_clicked()
             for (int i=0;i<MAXLENGTH;i++){
                 for (int j=0;j<MAXLENGTH;j++)
                     if (DPPath[i][j])
-                        Pheromone[i][j]+=5*MinPhe;
+                        Pheromone[i][j]=5*MinPhe;
                     else {}
             }
-            Ant::UpdatePheromone();
-            Ant::NewTurn(ants,maze);
         }
         else{
             int i=1,j=1,k=0;
-            while(i!=MAXLENGTH-2&&j!=MAXLENGTH-2){
+            while(k!=32){
                 if (DPPath[i+1][j]==1) {
                     i++;
                     for (int n=0;n<GeneNum/2;n++) {
@@ -323,7 +326,7 @@ void Widget::on_DPButton_clicked()
                 }
                 k++;
             }
-            Gene::NewTurn(group,maze);
+//            Gene::NewTurn(group,maze);
         }
     }
     else {

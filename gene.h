@@ -2,19 +2,20 @@
 #define GENE_H
 #include"maze.h"
 const int GeneLength=32;//基因长度
-static const int GeneNum=128;//个体数量
-const int VarRate=0.01;//变异概率
+static const int GeneNum=32;//个体数量
+const int VarRate=0.02;//变异概率
 const int GeneBlue=300/GeneNum;//用来绘图的常数 蓝色越深 代表个体越多
-
+const int RouNum=10;//轮盘赌比例常数
 class Gene{
 private:
     bool gene[GeneLength];//保存基因型的数组
-    int length;//保存该基因的适应值
+    int length;//路径求和值
+    double f;//适应值
 public:
-    Gene(int l=0) {for (int i=0;i<GeneLength;i++) gene[i]=false;length=l;}
-    Gene(const Gene & g){for (int i=0;i<GeneLength;i++) gene[i]=g.gene[i];length=g.length;}
+    Gene(int l=0) {for (int i=0;i<GeneLength;i++) gene[i]=false;length=l;f=0;}
+    Gene(const Gene & g){for (int i=0;i<GeneLength;i++) gene[i]=g.gene[i];length=g.length;f=g.f;}
     void SetBit(int n,bool g){gene[n]=g;}
-
+    int ReturnLength(){return length;}
     int GetBit(int n){//取某一位基因
         if (n<GeneLength-1&&n>=0){
             return gene[n];
@@ -56,6 +57,7 @@ public:
         qsrand((uint)QTime::currentTime().msec());
         for (int i=0;i<GeneLength;i++){
             gene[i]=qrand()%2;
+            //            Sleep(qrand()%2);
         }
         Correct();
     }
@@ -68,10 +70,10 @@ public:
             sum+=maze[x*MAXLENGTH+y];
         }
         length=sum;
+        f=MAXLENGTH*MAXNUMBER-length;
+        f/=RouNum;
         return sum;
     }
-
-    int ReturnLength(){return length;}
     void Variation(int num){//变异函数 变异num位
         qsrand((uint)QTime::currentTime().msec());
         for (int i=0;i<num;i++){
@@ -87,12 +89,13 @@ public:
         int num=GeneLength/n;//分成了num段
         for (int i=0;i<num;i++){//对于每一段
             for (int j=0;j<n;j++){
-                if (WhoFirst==0) NewOne.gene[j+i*num]=gene[j+i*num];
+                if (WhoFirst) NewOne.gene[j+i*num]=gene[j+i*num];
                 else NewOne.gene[j+i*num]=couple.gene[j+i*num];
                 WhoFirst=~WhoFirst;
             }
         }
         NewOne.Correct();
+        length=0;f=0;
         return NewOne;
     }
     static void UpdateQColor(Gene* group,int* GeneColor){//根据个体密度计算颜色
@@ -106,40 +109,51 @@ public:
             }
         }
     }
-    static void NewTurn(Gene* group,int * maze){//每一轮操作
-        for (int i=0;i<GeneNum;i++){//评估
-            group[i].length=group[i].Length(maze);
-        }
-        for (int i=0;i<GeneNum;i++){//选择排序
-            int mini=i;
-            for (int j=i+1;j<GeneNum;j++){
-                if (group[j].length<group[mini].length){
-                    mini=j;
-                }
-                if (mini!=i){
-                    Gene tmpg=group[i];
-                    group[i]=group[mini];
-                    group[mini]=tmpg;
-                }
-            }
-        }
+    static void RouSelect(Gene* &group){//轮盘赌算法
         qsrand((uint)QTime::currentTime().msec());
-        //交叉产生1/4新个体 随机新生成1/4个体  然后前1/4个体变异2位 1/4个体变异4位
-        for (int i=GeneNum/2;i<GeneNum*3/4;i++){//交叉产生1/4新个体
-            group[i]=group[i-GeneNum/2].Mate(group[i-GeneNum/2+1],4);
+        double sum=0; for (int i=0;i<GeneNum;i++) sum+=group[i].f;
+        Gene* newgroup=new Gene[GeneNum];
+        for (int i=0;i<GeneNum;i++){
+            bool find1=false,find2=false;
+            double select1=(qrand()%(int)(RouNum*sum))/RouNum;
+            Sleep(qrand()%3+1);
+            double select2=(qrand()%(int)(RouNum*sum))/RouNum;
+            int selectNum1=0,selectNum2=0;
+            double s=0;
+            for (int j=0;j<GeneNum;j++){
+                s+=group[j].f;
+                if (!find1&&s>select1){
+                    find1=true;
+                    selectNum1=j;
+                }
+                else if (!find2&&s>select2){
+                    find2=true;
+                    selectNum2=j;
+                }
+                if (find1&&find2) break;
+            }
+            int CrossNum=qrand()%3;
+            switch (CrossNum) {
+            case 0:CrossNum=4;break;
+            case 1:CrossNum=8;break;
+            case 2:CrossNum=16;break;
+            default:CrossNum=33;break;
+            }
+            newgroup[i]=group[selectNum1].Mate(group[selectNum2],CrossNum);
+            newgroup[i].Initial();
         }
-        for (int i=GeneNum*3/4;i<GeneNum;i++){//随机新生成1/4个体
-            qsrand((uint)QTime::currentTime().msec());
-            Sleep(qrand()%5);
-            group[i].Initial();
-        }
-        for (int i=2;i<GeneNum/4;i++){//1/4个体变异2位
-            Sleep(qrand()%5);
-            group[i].Variation(1);
-        }
-        for (int i=GeneNum/4;i<GeneNum/2;i++){//1/4个体变异4位
-            group[i].Variation(2);
-            Sleep(qrand()%5);
+        delete [] group;
+        group=newgroup;
+    }
+    static void NewTurn(Gene* &group,int * maze){//每一轮操作
+        RouSelect(group);
+        qsrand((uint)QTime::currentTime().msec());
+        for (int i=0;i<GeneNum;i++){//评估与变异
+            double var=((double)(qrand()%1000))/1000;
+            if (var<VarRate){
+                group[i].Variation(qrand()%3+1);//变异2位或4位或6位
+            }
+            group[i].Length(maze);
         }
     }
 };
