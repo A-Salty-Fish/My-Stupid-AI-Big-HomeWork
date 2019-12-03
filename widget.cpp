@@ -315,13 +315,13 @@ void Widget::on_DPButton_clicked()
                 if (DPPath[i+1][j]==1) {
                     i++;
                     for (int n=0;n<GeneNum/2;n++) {
-                        group[GeneNum-n].SetBit(k,1);
+                        group[n].SetBit(k,1);
                     }
                 }
                 else {
                     j++;
                     for (int n=0;n<GeneNum/2;n++) {
-                        group[GeneNum-n].SetBit(k,0);
+                        group[n].SetBit(k,0);
                     }
                 }
                 k++;
