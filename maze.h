@@ -4,9 +4,9 @@
 #include<qqueue.h>
 #include"windows.h"
 const int MAXLENGTH = 19;//地图大小
-static const int MAXNUMBER=10;//每格的最大值
+static const int MAXNUMBER=20;//每格的最大值
 static const int ROUTE=0;//默认值
-static const int WALL=11;//墙
+static const int WALL=MAXNUMBER+1;//墙
 static const int LEFT=-1,RIGHT=-2,UP=-3,DOWN=-4;//上下左右常量
 const int INF=0xFFFFFF;//默认最大值
 static bool DPPath[MAXLENGTH][MAXLENGTH];//保存DP算法求得的答案

@@ -2,8 +2,8 @@
 #define GENE_H
 #include"maze.h"
 const int GeneLength=32;//基因长度
-static const int GeneNum=32;//个体数量
-const int VarRate=0.02;//变异概率
+static const int GeneNum=64;//个体数量
+const int VarRate=0.5;//变异概率
 const int GeneBlue=300/GeneNum;//用来绘图的常数 蓝色越深 代表个体越多
 const int RouNum=10;//轮盘赌比例常数
 class Gene{
@@ -36,20 +36,42 @@ public:
 
     void Correct(){//矫正不正确的基因 基因中只能有16个1和16个0
         int zero=0,one=0;
-        for (int i=0;i<GeneLength;i++){
-            if (gene[i]==1) one++;
-            else zero++;
-            if (zero==GeneLength/2) {
-                for (int j=i+1;j<GeneLength;j++){
-                    gene[j]=1;
+        qsrand((uint)QTime::currentTime().msec());
+        bool First=qrand()%2;//决定从哪个方向开始计数
+        if (First){
+            for (int i=0;i<GeneLength;i++){
+                if (gene[i]==1) one++;
+                else zero++;
+                if (zero==GeneLength/2) {
+                    for (int j=i+1;j<GeneLength;j++){
+                        gene[j]=1;
+                    }
+                    return;
                 }
-                return;
+                else if (one==GeneLength/2){
+                    for (int j=i+1;j<GeneLength;j++){
+                        gene[j]=0;
+                    }
+                    return;
+                }
             }
-            else if (one==GeneLength/2){
-                for (int j=i+1;j<GeneLength;j++){
-                    gene[j]=0;
+        }
+        else{
+            for (int i=GeneLength-1;i>=0;i--){
+                if (gene[i]==1) one++;
+                else zero++;
+                if (zero==GeneLength/2) {
+                    for (int j=i-1;j>=0;j--){
+                        gene[j]=1;
+                    }
+                    return;
                 }
-                return;
+                else if (one==GeneLength/2){
+                    for (int j=i-1;j>=0;j--){
+                        gene[j]=0;
+                    }
+                    return;
+                }
             }
         }
     }
@@ -57,7 +79,6 @@ public:
         qsrand((uint)QTime::currentTime().msec());
         for (int i=0;i<GeneLength;i++){
             gene[i]=qrand()%2;
-            //            Sleep(qrand()%2);
         }
         Correct();
     }
@@ -109,38 +130,73 @@ public:
             }
         }
     }
-    static void RouSelect(Gene* &group){//轮盘赌算法
+    static void RouSelect(Gene* &group){//轮盘赌算法 选择交配池
         qsrand((uint)QTime::currentTime().msec());
-        double sum=0; for (int i=0;i<GeneNum;i++) sum+=group[i].f;
+        for (int i=0;i<GeneNum;i++){
+            int maxf=group[i].f;int maxi=i;
+            for (int j=i+1;j<GeneNum;j++){
+                if (maxf<group[j].f){
+                    Gene tmp=group[maxi];
+                    group[maxi]=group[j];
+                    group[j]=tmp;
+                }
+            }
+        }
+        double sum=0; for (int i=0;i<GeneNum/2;i++) sum+=group[i].f;
         Gene* newgroup=new Gene[GeneNum];
+        bool First=qrand()%2;//决定从哪个方向开始
         for (int i=0;i<GeneNum;i++){
             bool find1=false,find2=false;
             double select1=(qrand()%(int)(RouNum*sum))/RouNum;
-            Sleep(qrand()%3+1);
+            Sleep(qrand()%2+1);
             double select2=(qrand()%(int)(RouNum*sum))/RouNum;
             int selectNum1=0,selectNum2=0;
             double s=0;
-            for (int j=0;j<GeneNum;j++){
-                s+=group[j].f;
-                if (!find1&&s>select1){
-                    find1=true;
-                    selectNum1=j;
+            if (First){
+                for (int j=0;j<GeneNum/2;j++){
+                    s+=group[j].f;
+                    if (!find1&&s>select1){
+                        find1=true;
+                        selectNum1=j;
+                    }
+                    else if (!find2&&s>select2){
+                        find2=true;
+                        selectNum2=j;
+                    }
+                    if (find1&&find2) break;
                 }
-                else if (!find2&&s>select2){
-                    find2=true;
-                    selectNum2=j;
+                int CrossNum=qrand()%3;//交叉位数
+                switch (CrossNum) {
+                case 0:CrossNum=4;break;
+                case 1:CrossNum=8;break;
+                case 2:CrossNum=16;break;
+                default:CrossNum=33;break;
                 }
-                if (find1&&find2) break;
+                newgroup[i]=group[selectNum1].Mate(group[selectNum2],CrossNum);
+                //            newgroup[i].Initial();
             }
-            int CrossNum=qrand()%3;
-            switch (CrossNum) {
-            case 0:CrossNum=4;break;
-            case 1:CrossNum=8;break;
-            case 2:CrossNum=16;break;
-            default:CrossNum=33;break;
+            else{
+                for (int j=GeneNum-1;j>=GeneNum/2;j--){
+                    s+=group[j].f;
+                    if (!find1&&s>select1){
+                        find1=true;
+                        selectNum1=j;
+                    }
+                    else if (!find2&&s>select2){
+                        find2=true;
+                        selectNum2=j;
+                    }
+                    if (find1&&find2) break;
+                }
+                int CrossNum=qrand()%3;//交叉位数
+                switch (CrossNum) {
+                case 0:CrossNum=4;break;
+                case 1:CrossNum=8;break;
+                case 2:CrossNum=16;break;
+                default:CrossNum=33;break;
+                }
+                newgroup[i]=group[selectNum1].Mate(group[selectNum2],CrossNum);
             }
-            newgroup[i]=group[selectNum1].Mate(group[selectNum2],CrossNum);
-            newgroup[i].Initial();
         }
         delete [] group;
         group=newgroup;
@@ -149,11 +205,17 @@ public:
         RouSelect(group);
         qsrand((uint)QTime::currentTime().msec());
         for (int i=0;i<GeneNum;i++){//评估与变异
-            double var=((double)(qrand()%1000))/1000;
+            double var=((double)(qrand()%100))/100.0;
             if (var<VarRate){
                 group[i].Variation(qrand()%3+1);//变异2位或4位或6位
             }
             group[i].Length(maze);
+        }
+        int NewNum=qrand()%(GeneNum/8)+2;
+        for (int i=0;i<NewNum;i++){
+            int NewI=qrand()%GeneNum;
+            group[NewI].Initial();
+            group[NewI].Length(maze);
         }
     }
 };

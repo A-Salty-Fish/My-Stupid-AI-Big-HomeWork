@@ -259,7 +259,6 @@ void Widget::on_ContinueButton_2_clicked()
         Gene::UpdateQColor(group,GeneColor);
     }
     else{
-        Gene::NewTurn(group,maze);
         int mini=-1;
         int min=BestGene.ReturnLength();
         for (int i=0;i<GeneNum;i++){
@@ -274,6 +273,7 @@ void Widget::on_ContinueButton_2_clicked()
         BestGene.GeneToChar(CharGen);
         ui->GenText->setText(QString(CharGen));
         Gene::UpdateQColor(group,GeneColor);
+        Gene::NewTurn(group,maze);
     }
     update();
 }
@@ -305,28 +305,32 @@ void Widget::on_DPButton_clicked()
             for (int i=0;i<MAXLENGTH;i++){
                 for (int j=0;j<MAXLENGTH;j++)
                     if (DPPath[i][j])
-                        Pheromone[i][j]=5*MinPhe;
+                        Pheromone[i][j]+=10*MinPhe;
                     else {}
             }
         }
         else{
+            if (GeneTimer!=nullptr)
+            GeneTimer->stop();
             int i=1,j=1,k=0;
             while(k!=32){
                 if (DPPath[i+1][j]==1) {
                     i++;
-                    for (int n=0;n<GeneNum/2;n++) {
+                    for (int n=0;n<GeneNum;n++) {
                         group[n].SetBit(k,1);
                     }
                 }
                 else {
                     j++;
-                    for (int n=0;n<GeneNum/2;n++) {
+                    for (int n=0;n<GeneNum;n++) {
                         group[n].SetBit(k,0);
                     }
                 }
                 k++;
             }
-//            Gene::NewTurn(group,maze);
+            Gene::NewTurn(group,maze);
+            if (GeneTimer!=nullptr)
+                GeneTimer->start(100);
         }
     }
     else {
