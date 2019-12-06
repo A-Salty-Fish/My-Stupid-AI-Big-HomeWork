@@ -5,7 +5,7 @@
 #include<QStack>
 #include<QThread>
 
-const double alpha=0.9;//挥发常数
+const double beta=0.7;//挥发常数
 static const double MinPhe=1.0000005;//每格最小的信息素浓度
 static double Pheromone[MAXLENGTH][MAXLENGTH];//保存信息素的数组
 static QStack<int> min_x,min_y;//保存最优解
@@ -15,24 +15,6 @@ static const int ANTSNUM=5;//一组蚂蚁的数量
 const double PheRate=(double)8/ANTSNUM;//每只蚂蚁每次留下信息素浓度的比例常数
 static int MinOfAnt=MAXLENGTH*MAXNUMBER;//存储最优解的值
 static int PheRed=100/ANTSNUM;//用来绘图的颜色常数 越红代表信息素浓度越高
-
-
-int SelectDirection(double right,double down){//轮盘赌法 以右方的信息素浓度与下方信息素浓度的比值随机选择一个方向
-    qsrand((uint)QTime::currentTime().msec());
-    bool First=qrand()%2;
-    const int total=1000;
-    int rightp=(int)(total*(right/(right+down)));
-    Sleep(qrand()%3);
-    int randnum=qrand()%total;
-    if (First){
-        if (randnum<rightp) return RIGHT;
-        else return DOWN;
-    }
-    else{
-        if (randnum<rightp) return DOWN;
-        else return RIGHT;
-    }
-}
 
 class Ant{
     int x, y;//坐标
@@ -55,16 +37,38 @@ public:
             min_y.push(tmpy.top());back_y.push(tmpy.pop());
         }
     }
+    int SelectDirection(double right,double down,int *maze){//轮盘赌法 以右方的信息素浓度与下方信息素浓度的比值随机选择一个方向
+        qsrand((uint)QTime::currentTime().msec());
+        if (x==MAXLENGTH-2) return RIGHT;
+        else if (y==MAXLENGTH-2) return DOWN;
+        else{
+            bool First=qrand()%2;
+            const int total=1000;
+            double ur=MAXNUMBER-maze[x*MAXLENGTH+y+1];//右方启发值
+            double ud=MAXNUMBER-maze[(x+1)*MAXLENGTH+y];//下方启发值
+            int rightp=(int)(total*(ur*right/(ur*right+ud*down)));
+            Sleep(qrand()%3);
+            int randnum=qrand()%total;
+            if (First){
+                if (randnum<rightp) return RIGHT;
+                else return DOWN;
+            }
+            else{
+                if (randnum<rightp) return DOWN;
+                else return RIGHT;
+            }
+        }
+    }
     static void UpdatePheromone(){//每轮后信息素浓度衰减
         for (int i=1;i<MAXLENGTH-1;i++)
             for (int j=1;j<MAXLENGTH-1;j++){
-                Pheromone[i][j]=alpha*(Pheromone[i][j]-MinPhe)+1;
+                Pheromone[i][j]=beta*(Pheromone[i][j]-MinPhe)+1;
             }
     }
-    void RemainPheromone(){//在走过的路径上留下信息素  使用Ant-Circle System
+    void RemainPheromone(int *maze){//在走过的路径上留下信息素  使用Ant-Circle System
         while(!back_x.empty()&&!back_y.empty()){
             int px=back_x.pop();int py=back_y.pop();
-            Pheromone[px][py]+=((double)MAXWAY/ANTSNUM)/length;//距离越短 信息素浓度越大
+            Pheromone[px][py]+=PheRate*(((double)MAXWAY/ANTSNUM)/length);//距离越短 信息素浓度越大
         }
     }
     void FindWay(int * maze){//每只蚂蚁每一步的寻路
@@ -74,10 +78,8 @@ public:
         //如果没到终点
         else if (back==0){
             int direction;
-            direction=SelectDirection(Pheromone[x][y+1],Pheromone[x+1][y]);//信息素浓度越大的方向越容易被选中
+            direction=SelectDirection(Pheromone[x][y+1],Pheromone[x+1][y],maze);//信息素浓度越大的方向越容易被选中
             //按选中的方向更新坐标
-            if (direction==RIGHT&&y==MAXLENGTH-2) direction=DOWN;
-            else if (direction==DOWN&&x==MAXLENGTH-2) direction=RIGHT;
             switch (direction) {
             case RIGHT:y++; break;
             case DOWN:x++; break;
@@ -102,7 +104,7 @@ public:
         }
         if(is_smaller) ants[mini].UpdateMinStack();//更新保存最短路径的栈
         for (int i=0;i<ANTSNUM;i++){
-            ants[i].RemainPheromone();//所有蚂蚁在路径上留下信息素
+            ants[i].RemainPheromone(maze);//所有蚂蚁在路径上留下信息素
         }
         UpdatePheromone();//更新地图上的信息素
     }

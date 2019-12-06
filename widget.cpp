@@ -23,6 +23,7 @@ static bool FirstTurn=true;
 static int GeneColor[MAXLENGTH*MAXLENGTH];
 static int MinOfGene=MAXLENGTH*MAXNUMBER;
 static Gene BestGene;
+
 static bool ShowGeneWay=0;
 static QTimer *GeneTimer=nullptr;
 
@@ -146,9 +147,11 @@ void Widget::on_PushButton_clicked()
         for (int i=0;i<ANTSNUM;i++) ants[i]= Ant();
         for (int i=0;i<MAXLENGTH;i++) for (int j=0;j<MAXLENGTH;j++) GeneColor[i*MAXLENGTH+j]=0;
         Genetated=1;
-        update();
-        QString dpstr=QString::number(m.DP(),10);
+        int DPResult=m.DP();
+//        int DPResult=10;
+        QString dpstr=QString::number(DPResult,10);
         ui->DPLable->setText(dpstr);
+        update();
         ui->PushButton->setEnabled(false);
         ui->ResetButton->setEnabled(true);
         ui->AutoButton->setEnabled(true);
@@ -190,6 +193,7 @@ void Widget::on_ResetButton_clicked()
         ui->AntMinButton->setEnabled(false);
         ui->GenMinButton_2->setEnabled(false);
         ui->ContinueButton->setEnabled(false);
+        ui->DPButton->setEnabled(false);
     }
 }
 

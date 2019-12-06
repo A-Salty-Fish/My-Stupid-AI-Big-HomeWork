@@ -8,7 +8,8 @@ static const int MAXNUMBER=20;//每格的最大值
 static const int ROUTE=0;//默认值
 static const int WALL=MAXNUMBER+1;//墙
 static const int LEFT=-1,RIGHT=-2,UP=-3,DOWN=-4;//上下左右常量
-const int INF=0xFFFFFF;//默认最大值
+const int INF=0xFFFFF;//默认最大值
+static int TriangleMaze[2*MAXLENGTH-1][MAXLENGTH];//DP数组
 static bool DPPath[MAXLENGTH][MAXLENGTH];//保存DP算法求得的答案
 
 class MyMaze{
@@ -43,7 +44,6 @@ public:
         }
     }
     int DP(){//动态规划算法
-        int TriangleMaze[2*MAXLENGTH-1][MAXLENGTH];
         //初始化数组
         for (int i=0;i<2*MAXLENGTH-1;i++)
             for (int j=0;j<MAXLENGTH;j++)
@@ -54,12 +54,14 @@ public:
             }
         }
         //动态规划
-        for (int i=2*MAXLENGTH-5;i>1;i--){
-            for (int j=1;j<i;j++)
-                if (TriangleMaze[i][j]!=INF){//&&(TriangleMaze[i+1][j]!=INF||TriangleMaze[i+1][j+1]!=INF)
+        for (int i=2*MAXLENGTH-6;i>1;i--){
+            for (int j=1;j<i&&j<MAXLENGTH-1;j++)
+                if (TriangleMaze[i][j]!=INF){
                     if (TriangleMaze[i+1][j]>TriangleMaze[i+1][j+1])
                         TriangleMaze[i][j]+=TriangleMaze[i+1][j+1];
-                    else TriangleMaze[i][j]+=TriangleMaze[i+1][j];
+                    else if(TriangleMaze[i+1][j]!=INF)
+                        TriangleMaze[i][j]+=TriangleMaze[i+1][j];
+                    else continue;
                 }
         }
         //还原解
@@ -70,11 +72,6 @@ public:
         }
         DPPath[1][1]=0;
         DPPath[MAXLENGTH-2][MAXLENGTH-2]=0;
-        int sum=0;
-        for(int i=1;i<MAXLENGTH-1;i++)
-            for (int j=1;j<MAXLENGTH-1;j++)
-                if (DPPath[i][j])
-                    sum+=maze[i][j];
         return TriangleMaze[2][1];//返回最优解
     }
 };
