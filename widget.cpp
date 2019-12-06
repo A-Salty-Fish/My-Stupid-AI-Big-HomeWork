@@ -4,7 +4,7 @@
 #include "ants.h"
 #include "gene.h"
 #include"qtimer.h"
-
+#include "qmessagebox.h"
 
 static MyMaze m;
 static int maze[(MAXLENGTH)*MAXLENGTH];
@@ -148,7 +148,7 @@ void Widget::on_PushButton_clicked()
         for (int i=0;i<MAXLENGTH;i++) for (int j=0;j<MAXLENGTH;j++) GeneColor[i*MAXLENGTH+j]=0;
         Genetated=1;
         int DPResult=m.DP();
-//        int DPResult=10;
+
         QString dpstr=QString::number(DPResult,10);
         ui->DPLable->setText(dpstr);
         update();
@@ -265,12 +265,16 @@ void Widget::on_ContinueButton_2_clicked()
     else{
         int mini=-1;
         int min=BestGene.ReturnLength();
+        bool equal=true;
         for (int i=0;i<GeneNum;i++){
             if (group[i].ReturnLength()<min){
                 mini=i;
                 min=group[i].ReturnLength();
             }
+            if (group[i].ReturnLength()!=group[0].ReturnLength())
+                equal=false;
         }
+        if (!equal){
         if (mini!=-1)
             BestGene=group[mini];
         ui->GeneMinText->setText(QString::number(BestGene.ReturnLength(),10));
@@ -278,6 +282,23 @@ void Widget::on_ContinueButton_2_clicked()
         ui->GenText->setText(QString(CharGen));
         Gene::UpdateQColor(group,GeneColor);
         Gene::NewTurn(group,maze);
+        }
+        else{
+            qsrand((uint)QTime::currentTime().msec());
+            if (GeneTimer!=nullptr)
+            GeneTimer->stop();
+            int result=group[0].ReturnLength();
+            QString strResult="结果是："+QString::number(result,10)+ "\n单击重新生成群体";
+            QMessageBox::information(NULL, "已收敛", strResult, QMessageBox::Yes, QMessageBox::Yes);
+            for (int i=0;i<GeneNum;i++) {
+                Sleep(qrand()%3+1);
+                group[i].Initial();
+                group[i].Length(maze);
+            }
+            VarRate=0.8;
+            if (GeneTimer!=nullptr)
+            GeneTimer->start(100);
+        }
     }
     update();
 }
@@ -305,41 +326,15 @@ void Widget::on_DPButton_clicked()
     if (!ShowDPWay){
         ShowDPWay=true;
         ui->DPButton->setText("路径\\关");
-        if (isAnt){
-            for (int i=0;i<MAXLENGTH;i++){
-                for (int j=0;j<MAXLENGTH;j++)
-                    if (DPPath[i][j])
-                        Pheromone[i][j]+=10*MinPhe;
-                    else {}
-            }
-        }
-        else{
-            if (GeneTimer!=nullptr)
-            GeneTimer->stop();
-            int i=1,j=1,k=0;
-            while(k!=32){
-                if (DPPath[i+1][j]==1) {
-                    i++;
-                    for (int n=0;n<GeneNum;n++) {
-                        group[n].SetBit(k,1);
-                    }
-                }
-                else {
-                    j++;
-                    for (int n=0;n<GeneNum;n++) {
-                        group[n].SetBit(k,0);
-                    }
-                }
-                k++;
-            }
-            Gene::NewTurn(group,maze);
-            if (GeneTimer!=nullptr)
-                GeneTimer->start(100);
-        }
     }
     else {
         ShowDPWay=false;
         ui->DPButton->setText("路径\\开");
     }
     update();
+}
+
+void Widget::on_CloseButton_clicked()
+{
+
 }

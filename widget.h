@@ -36,6 +36,8 @@ private slots:
 
     void on_DPButton_clicked();
 
+    void on_CloseButton_clicked();
+
 private:
     Ui::Widget *ui;
 };

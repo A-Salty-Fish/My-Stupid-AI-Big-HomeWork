@@ -131,7 +131,7 @@ public:
     }
     static void RankSelect(Gene* &group){//基于排名的选择算法 选择交配池
         qsrand((uint)QTime::currentTime().msec());
-        for (int i=0;i<GeneNum;i++){//先排名
+        for (int i=0;i<GeneNum;i++){//先排名 选择排序
             int maxf=group[i].f;int maxi=i;
             for (int j=i+1;j<GeneNum;j++){
                 if (maxf<group[j].f){
@@ -143,7 +143,7 @@ public:
             group[maxi]=group[i];
             group[i]=tmp;
         }
-        Gene* newgroup=new Gene[GeneNum];
+        Gene* newgroup=new Gene[GeneNum];//新群体
         int rankf[GeneNum];
         int total=10*GeneNum*(GeneNum+1);//比例常数
 
@@ -173,10 +173,11 @@ public:
                 i--;
                 continue;
             }
-            int CrossNum=qrand()%2;//交叉位数
+            int CrossNum=qrand()%3;//交叉位数
             switch (CrossNum) {
             case 0:CrossNum=2;break;
             case 1:CrossNum=4;break;
+            case 2:CrossNum=8;break;
             }
             newgroup[i]=group[selectNum1].Mate(group[selectNum2],CrossNum);
         }
@@ -193,6 +194,8 @@ public:
             }
             group[i].Length(maze);
         }
+        //模拟死亡操作 死亡一定的个体 然后随机生成新个体
+        Sleep(qrand()%2+1);
         int NewNum=qrand()%(GeneNum/8);
         for (int i=0;i<NewNum;i++){
             int NewI=qrand()%GeneNum;
