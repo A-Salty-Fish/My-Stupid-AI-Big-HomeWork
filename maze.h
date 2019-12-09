@@ -4,11 +4,13 @@
 #include<qqueue.h>
 #include"windows.h"
 const int MAXLENGTH = 19;//地图大小
-static const int MAXNUMBER=20;//每格的最大值
+static const int MAXNUMBER=20;//每格的最大权值
+
 static const int ROUTE=0;//默认值
 static const int WALL=MAXNUMBER+1;//墙
 static const int LEFT=-1,RIGHT=-2,UP=-3,DOWN=-4;//上下左右常量
-const int INF=0xFFFFF;//默认最大值
+
+const int INF=0xFFFFFF;//最大常数值
 static int TriangleMaze[2*MAXLENGTH-1][MAXLENGTH];//DP数组
 static bool DPPath[MAXLENGTH][MAXLENGTH];//保存DP算法求得的答案
 
@@ -28,7 +30,6 @@ public:
             for (int j=0;j<MAXLENGTH;j++)
                 s[i*MAXLENGTH+j]=maze[i][j];
     }
-
     void CreateMazeWithWeights(){//随机生成带值图
         qsrand((uint)QTime::currentTime().msec());
         for (int i=1;i<MAXLENGTH-1;i++)

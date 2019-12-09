@@ -21,7 +21,6 @@ private slots:
 
     void on_ResetButton_clicked();
 
-
     void on_ContinueButton_clicked();
 
     void on_AutoButton_clicked();

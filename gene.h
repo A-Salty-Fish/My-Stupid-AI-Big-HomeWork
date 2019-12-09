@@ -1,10 +1,13 @@
 #ifndef GENE_H
 #define GENE_H
 #include"maze.h"
+
 const int GeneLength=32;//基因长度
 static const int GeneNum=64;//个体数量
-int VarRate=0.8;//变异概率
+
+double VarRate=0.8;//变异概率
 const int GeneBlue=300/GeneNum;//用来绘图的常数 蓝色越深 代表个体越多
+
 const double A=1.1,B=0.2;//线性选择常数
 
 class Gene{
@@ -13,10 +16,21 @@ private:
     int length;//路径求和值
     double f;//适应值
 public:
-    Gene(int l=0) {for (int i=0;i<GeneLength;i++) gene[i]=false;length=l;f=0;}
-    Gene(const Gene & g){for (int i=0;i<GeneLength;i++) gene[i]=g.gene[i];length=g.length;f=g.f;}
+    Gene(int l=0) {
+        for (int i=0;i<GeneLength;i++)
+            gene[i]=false;
+        length=l;
+        f=0;
+    }
+    Gene(const Gene & g){
+        for (int i=0;i<GeneLength;i++)
+            gene[i]=g.gene[i];
+        length=g.length;
+        f=g.f;
+    }
     void SetBit(int n,bool g){gene[n]=g;}
     int ReturnLength(){return length;}
+
     int GetBit(int n){//取某一位基因
         if (n<GeneLength-1&&n>=0){
             return gene[n];
@@ -25,14 +39,14 @@ public:
     }
 
     void GeneToChar(char *c){//将bool数组转换成char数组来显示
-        for (int i=0;i<16;i++)
+        for (int i=0;i<GeneLength/2;i++)
             if (gene[i]==0) c[i]='0';
             else c[i]='1';
-        c[16]='\n';
-        for (int i=17;i<33;i++)
+        c[GeneLength/2]='\n';
+        for (int i=GeneLength/2+1;i<GeneLength+1;i++)
             if (gene[i-1]==0) c[i]='0';
             else c[i]='1';
-        c[33]='\0';
+        c[GeneLength+1]='\0';
     }
 
     void Correct(){//矫正不正确的基因 基因中只能有16个1和16个0
@@ -76,6 +90,7 @@ public:
             }
         }
     }
+
     void Initial(){//随机生成基因
         qsrand((uint)QTime::currentTime().msec());
         for (int i=0;i<GeneLength;i++){
@@ -95,7 +110,8 @@ public:
         f=MAXLENGTH*MAXNUMBER-length;
         return sum;
     }
-    void Variation(int num){//变异函数 变异num位
+
+    void Variation(int num){//变异函数 变异num*2位
         qsrand((uint)QTime::currentTime().msec());
         for (int i=0;i<num;i++){
             int n=qrand()%GeneLength;
@@ -103,6 +119,7 @@ public:
         }
         Correct();
     }
+
     Gene Mate(Gene& couple,int n){//每n个交叉基因
         Gene NewOne;
         qsrand((uint)QTime::currentTime().msec());
@@ -118,8 +135,13 @@ public:
         NewOne.Correct();
         return NewOne;
     }
+
     static void UpdateQColor(Gene* group,int* GeneColor){//根据个体密度计算颜色
-        for (int i=0;i<MAXLENGTH;i++) for (int j=0;j<MAXLENGTH;j++) GeneColor[i*MAXLENGTH+j]=0;
+        //清除上轮数据
+        for (int i=0;i<MAXLENGTH;i++)
+            for (int j=0;j<MAXLENGTH;j++)
+                GeneColor[i*MAXLENGTH+j]=0;
+        //生成这一轮的数据
         for (int i=0;i<GeneNum;i++){
             int x=1,y=1;
             for (int j=0;j<GeneLength-1;j++){
@@ -129,6 +151,7 @@ public:
             }
         }
     }
+
     static void RankSelect(Gene* &group){//基于排名的选择算法 选择交配池
         qsrand((uint)QTime::currentTime().msec());
         for (int i=0;i<GeneNum;i++){//先排名 选择排序
@@ -179,7 +202,7 @@ public:
             case 1:CrossNum=4;break;
             case 2:CrossNum=8;break;
             }
-            newgroup[i]=group[selectNum1].Mate(group[selectNum2],CrossNum);
+            newgroup[i]=group[selectNum1].Mate(group[selectNum2],CrossNum);//交叉
         }
         delete [] group;
         group=newgroup;
@@ -192,7 +215,7 @@ public:
             if (var<VarRate){
                 group[i].Variation(qrand()%3+1);//变异2位或4位或6位
             }
-            group[i].Length(maze);
+            group[i].Length(maze);//评估
         }
         //模拟死亡操作 死亡一定的个体 然后随机生成新个体
         Sleep(qrand()%2+1);
@@ -203,7 +226,7 @@ public:
             group[NewI].Length(maze);
         }
         if (VarRate>0)
-            VarRate=VarRate-0.01;//变异概率减少
+            VarRate=VarRate-0.01;//每轮变异概率减少
     }
 };
 

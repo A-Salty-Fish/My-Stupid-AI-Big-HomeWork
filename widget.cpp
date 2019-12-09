@@ -6,26 +6,26 @@
 #include"qtimer.h"
 #include "qmessagebox.h"
 
-static MyMaze m;
-static int maze[(MAXLENGTH)*MAXLENGTH];
-static bool Genetated=0;
-static int BOXWIDTH=40;//一格的宽度 正方形
+static MyMaze m;//地图
+static int maze[(MAXLENGTH)*MAXLENGTH];//保存地图的一维数组
+static bool Genetated=0;//是否生成了地图
+//绘图常数
+static int BOXWIDTH=40;//正方形 一格的宽度
 static int DRAWWIDTH=MAXLENGTH*BOXWIDTH;//画布长度
 
-static bool ShowDPWay=false;
-static Ant ants[ANTSNUM];
-static QTimer *AntTimer=nullptr;
-static bool isAnt;
-static bool ShowAntWay=0;
+static bool ShowDPWay=false;//是否显示动态规划路径
+static Ant ants[ANTSNUM];//蚁群数组
+static QTimer *AntTimer=nullptr;//蚁群算法自动定时器
+static bool isAnt;//是否按蚁群算法绘图
+static bool ShowAntWay=0;//是否显示蚁群算法求得最优解
 
-static Gene* group;
-static bool FirstTurn=true;
-static int GeneColor[MAXLENGTH*MAXLENGTH];
-static int MinOfGene=MAXLENGTH*MAXNUMBER;
-static Gene BestGene;
-
-static bool ShowGeneWay=0;
-static QTimer *GeneTimer=nullptr;
+static Gene* group;//遗传算法的基因数组
+static bool FirstTurn=true;//是否是第一轮
+static int GeneColor[MAXLENGTH*MAXLENGTH];//颜色数组
+static int MinOfGene=MAXLENGTH*MAXNUMBER;//遗传算法最优借
+static Gene BestGene;//遗传算法最优个体
+static bool ShowGeneWay=0;//是否按遗传算法绘图
+static QTimer *GeneTimer=nullptr;//遗传算法自动定时器
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
