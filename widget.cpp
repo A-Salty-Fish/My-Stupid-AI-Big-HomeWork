@@ -327,6 +327,7 @@ void Widget::on_DPButton_clicked()
         ShowDPWay=true;
         ui->DPButton->setText("路径\\关");
     }
+
     else {
         ShowDPWay=false;
         ui->DPButton->setText("路径\\开");
